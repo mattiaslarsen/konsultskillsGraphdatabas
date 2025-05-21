@@ -1,0 +1,210 @@
+{
+  "nodes": {
+    "Consultant": {
+      "attributes": {
+        "name": {
+          "type": "string",
+          "constraint": "UNIQUE",
+          "description": "Konsultens fullständiga namn"
+        },
+        "email": {
+          "type": "string",
+          "description": "Konsultens e-postadress"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Konsultens telefonnummer"
+        },
+        "linkedin": {
+          "type": "string",
+          "description": "URL till LinkedIn-profil"
+        },
+        "location": {
+          "type": "string",
+          "description": "Konsultens plats/ort"
+        },
+        "role": {
+          "type": "string",
+          "description": "Nuvarande roll/titel"
+        },
+        "level": {
+          "type": "string",
+          "description": "Senioritetsnivå"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Beskrivning av konsultens erfarenhet och kompetens"
+        },
+        "expertise": {
+          "type": "array",
+          "description": "Lista över expertisområden (t.ex. 'GenAI Konceptutveckling & Implementation')"
+        },
+        "employment_type": {
+          "type": "string",
+          "description": "Typ av anställning (t.ex. 'Consultant')"
+        },
+        "employment_by": {
+          "type": "string",
+          "description": "Anställningsbolag (t.ex. 'GNR8')"
+        }
+      }
+    },
+    "Technology": {
+      "attributes": {
+        "name": {
+          "type": "string",
+          "constraint": "UNIQUE",
+          "description": "Namn på teknologi eller plattform (t.ex. 'Python', 'React', 'Azure')"
+        },
+        "category": {
+          "type": "string",
+          "description": "Kategori (t.ex. 'Programming Language', 'Cloud Platform', 'Framework')"
+        }
+      }
+    },
+    "Method": {
+      "attributes": {
+        "name": {
+          "type": "string",
+          "constraint": "UNIQUE",
+          "description": "Namn på metod eller arbetssätt (t.ex. 'Hypotesdriven utveckling', 'SAFe')"
+        },
+        "category": {
+          "type": "string",
+          "description": "Kategori (t.ex. 'Development', 'Project Management', 'Agile')"
+        }
+      }
+    },
+    "Tool": {
+      "attributes": {
+        "name": {
+          "type": "string",
+          "constraint": "UNIQUE",
+          "description": "Namn på verktyg (t.ex. 'Jira', 'Confluence', 'PowerBI')"
+        },
+        "category": {
+          "type": "string",
+          "description": "Kategori (t.ex. 'Project Management', 'Documentation', 'Analytics')"
+        }
+      }
+    },
+    "Language": {
+      "attributes": {
+        "name": {
+          "type": "string",
+          "constraint": "UNIQUE",
+          "description": "Språk (t.ex. 'Swedish', 'English')"
+        }
+      }
+    },
+    "Education": {
+      "attributes": {
+        "name": {
+          "type": "string",
+          "constraint": "UNIQUE",
+          "description": "Utbildningsnamn (t.ex. 'MSc Teknisk Fysik')"
+        },
+        "institution": {
+          "type": "string",
+          "description": "Utbildningsinstitution (t.ex. 'Uppsala Universitet')"
+        }
+      }
+    },
+    "Assignment": {
+      "attributes": {
+        "role": {
+          "type": "string",
+          "description": "Roll under uppdraget"
+        },
+        "client": {
+          "type": "string",
+          "description": "Kundföretag"
+        },
+        "period": {
+          "type": "string",
+          "description": "Tidsperiod för uppdraget"
+        },
+        "description": {
+          "type": "string",
+          "description": "Beskrivning av uppdraget"
+        }
+      }
+    }
+  },
+  "relationships": {
+    "KNOWS_TECHNOLOGY": {
+      "from": "Consultant",
+      "to": "Technology",
+      "description": "Konsulten kan denna teknologi"
+    },
+    "USES_METHOD": {
+      "from": "Consultant",
+      "to": "Method",
+      "description": "Konsulten använder denna metod"
+    },
+    "USES_TOOL": {
+      "from": "Consultant",
+      "to": "Tool",
+      "description": "Konsulten använder detta verktyg"
+    },
+    "SPEAKS": {
+      "from": "Consultant",
+      "to": "Language",
+      "attributes": {
+        "level": {
+          "type": "string",
+          "description": "Språknivå (t.ex. 'Modersmål', 'Flytande')"
+        }
+      },
+      "description": "Konsulten talar detta språk"
+    },
+    "HAS_EDUCATION": {
+      "from": "Consultant",
+      "to": "Education",
+      "attributes": {
+        "period": {
+          "type": "string",
+          "description": "Tidsperiod för utbildningen"
+        }
+      },
+      "description": "Konsulten har denna utbildning"
+    },
+    "PERFORMED": {
+      "from": "Consultant",
+      "to": "Assignment",
+      "description": "Konsulten utförde detta uppdrag"
+    }
+  },
+  "constraints": [
+    {
+      "node": "Consultant",
+      "property": "name",
+      "type": "UNIQUE"
+    },
+    {
+      "node": "Technology",
+      "property": "name",
+      "type": "UNIQUE"
+    },
+    {
+      "node": "Method",
+      "property": "name",
+      "type": "UNIQUE"
+    },
+    {
+      "node": "Tool",
+      "property": "name",
+      "type": "UNIQUE"
+    },
+    {
+      "node": "Language",
+      "property": "name",
+      "type": "UNIQUE"
+    },
+    {
+      "node": "Education",
+      "property": "name",
+      "type": "UNIQUE"
+    }
+  ]
+} 

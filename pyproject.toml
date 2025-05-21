@@ -1,0 +1,33 @@
+[project]
+name = "konsultskills-graphdb"
+version = "0.1.0"
+description = "Neo4j graph database for consultant skills and experience"
+authors = [
+    {name = "Mattias Larsen", email = ""}
+]
+dependencies = [
+    "neo4j>=5.15.0",
+    "python-dotenv>=1.0.0",
+    "tqdm>=4.66.1",
+]
+requires-python = ">=3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+] 
