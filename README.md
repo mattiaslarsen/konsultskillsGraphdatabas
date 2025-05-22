@@ -10,7 +10,7 @@ Detta projekt implementerar en Neo4j-grafdatabas för att hantera konsultprofile
 - `schema.json` - Databasens schema och constraints
 - JSON-filer med konsultprofiler
 
-## Installation
+## Installation och utveckling
 
 1. Installera Docker och Docker Compose
 2. Skapa och aktivera Python-miljö med uv:
@@ -20,17 +20,43 @@ Detta projekt implementerar en Neo4j-grafdatabas för att hantera konsultprofile
    # eller
    .venv\Scripts\activate     # Windows
    ```
-3. Installera beroenden (välj en av metoderna):
-
-   Metod 1 (rekommenderad):
+3. Installera beroenden:
    ```bash
+   pip install uv
    uv pip install -e .
    ```
 
-   Metod 2 (backup om metod 1 inte fungerar):
+## Köra med Docker
+
+1. Bygg Docker-imagen:
    ```bash
-   uv pip install neo4j python-dotenv tqdm
+   docker build -t konsultskills-graphdb .
    ```
+2. Starta containern:
+   ```bash
+   docker run -p 5000:5000 konsultskills-graphdb
+   ```
+3. Öppna applikationen (om du har en webbtjänst):
+   Gå till [http://localhost:5000](http://localhost:5000) i webbläsaren.
+
+### Exempel på Dockerfile med pyproject.toml och uv
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install uv
+
+COPY pyproject.toml ./
+COPY . .
+
+RUN uv pip install -e .
+
+EXPOSE 5000
+
+CMD ["python", "import_profiles.py"]
+```
 
 ## Användning
 
@@ -38,14 +64,11 @@ Detta projekt implementerar en Neo4j-grafdatabas för att hantera konsultprofile
    ```bash
    docker-compose up -d
    ```
-
 2. Vänta tills Neo4j är igång (kontrollera loggarna med `docker-compose logs -f`)
-
 3. Kör import-skriptet:
    ```bash
    python import_profiles.py
    ```
-
 4. När du är klar, stäng ner Neo4j:
    ```bash
    docker-compose down
