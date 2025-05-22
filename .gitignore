@@ -172,3 +172,28 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Neo4j database files
+neo4j/data/
+neo4j/import/
+neo4j/logs/
+neo4j/conf/
+neo4j/plugins/
+neo4j/metrics/
+neo4j/transactions/
+neo4j/*.db
+neo4j/*.log
+
+# Python virtual environments
+.venv/
+venv/
+
+# Pycache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS/Editor files
+.DS_Store
+Thumbs.db

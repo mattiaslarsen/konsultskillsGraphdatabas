@@ -41,22 +41,20 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
         consultant_query = """
         MERGE (c:Consultant {
             name: $name,
-            title: $title,
             expertise: $expertise,
             employment_type: $employment_type,
             employment_by: $employment_by
         })
         """
         session.run(consultant_query, {
-            "name": data["name"],
-            "title": data["title"],
-            "expertise": data["expertise"],
-            "employment_type": data["employment_type"],
-            "employment_by": data["employment_by"]
+            "name": data.get("name", ""),
+            "expertise": data.get("expertise", ""),
+            "employment_type": data.get("employment_type", ""),
+            "employment_by": data.get("employment_by", "")
         })
 
         # Create and connect technologies
-        for tech in data["technologies"]:
+        for tech in data.get("technologies", []):
             tech_query = """
             MERGE (t:Technology {name: $name, category: $category})
             WITH t
@@ -66,11 +64,11 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             session.run(tech_query, {
                 "name": tech["name"],
                 "category": tech["category"],
-                "consultant_name": data["name"]
+                "consultant_name": data.get("name", "")
             })
 
         # Create and connect methods
-        for method in data["methods"]:
+        for method in data.get("methods", []):
             method_query = """
             MERGE (m:Method {name: $name, category: $category})
             WITH m
@@ -80,11 +78,11 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             session.run(method_query, {
                 "name": method["name"],
                 "category": method["category"],
-                "consultant_name": data["name"]
+                "consultant_name": data.get("name", "")
             })
 
         # Create and connect tools
-        for tool in data["tools"]:
+        for tool in data.get("tools", []):
             tool_query = """
             MERGE (t:Tool {name: $name, category: $category})
             WITH t
@@ -94,11 +92,11 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             session.run(tool_query, {
                 "name": tool["name"],
                 "category": tool["category"],
-                "consultant_name": data["name"]
+                "consultant_name": data.get("name", "")
             })
 
         # Create and connect languages
-        for lang in data["languages"]:
+        for lang in data.get("languages", []):
             lang_query = """
             MERGE (l:Language {name: $name})
             WITH l
@@ -108,11 +106,11 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             session.run(lang_query, {
                 "name": lang["name"],
                 "proficiency": lang["proficiency"],
-                "consultant_name": data["name"]
+                "consultant_name": data.get("name", "")
             })
 
         # Create and connect education
-        for edu in data["education"]:
+        for edu in data.get("education", []):
             edu_query = """
             MERGE (e:Education {name: $name, institution: $institution})
             WITH e
@@ -122,8 +120,38 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             session.run(edu_query, {
                 "name": edu["name"],
                 "institution": edu["institution"],
-                "consultant_name": data["name"]
+                "consultant_name": data.get("name", "")
             })
+
+        # Create and connect assignments with roles
+        for assignment in data.get("assignments", []):
+            assignment_query = """
+            MERGE (a:Assignment {name: $name, period: $period})
+            WITH a
+            MATCH (c:Consultant {name: $consultant_name})
+            MERGE (c)-[r:PERFORMED]->(a)
+            """
+            session.run(assignment_query, {
+                "name": assignment["name"],
+                "period": assignment["period"],
+                "consultant_name": data.get("name", "")
+            })
+
+            for role in assignment.get("roles", []):
+                role_query = """
+                MERGE (r:Role {name: $name, description: $description})
+                WITH r
+                MATCH (c:Consultant {name: $consultant_name})
+                MATCH (a:Assignment {name: $assignment_name})
+                MERGE (c)-[r1:HAS_ROLE]->(r)
+                MERGE (r)-[r2:IN_ASSIGNMENT]->(a)
+                """
+                session.run(role_query, {
+                    "name": role["name"],
+                    "description": role["description"],
+                    "consultant_name": data.get("name", ""),
+                    "assignment_name": assignment["name"]
+                })
 
 def main():
     # Connect to Neo4j

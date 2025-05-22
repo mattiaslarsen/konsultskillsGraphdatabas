@@ -112,21 +112,26 @@
     },
     "Assignment": {
       "attributes": {
-        "role": {
+        "name": {
           "type": "string",
-          "description": "Roll under uppdraget"
-        },
-        "client": {
-          "type": "string",
-          "description": "Kundföretag"
+          "description": "Namn på uppdraget"
         },
         "period": {
           "type": "string",
           "description": "Tidsperiod för uppdraget"
+        }
+      }
+    },
+    "Role": {
+      "attributes": {
+        "name": {
+          "type": "string",
+          "constraint": "UNIQUE",
+          "description": "Namn på rollen"
         },
         "description": {
           "type": "string",
-          "description": "Beskrivning av uppdraget"
+          "description": "Beskrivning av rollen"
         }
       }
     }
@@ -173,6 +178,16 @@
       "from": "Consultant",
       "to": "Assignment",
       "description": "Konsulten utförde detta uppdrag"
+    },
+    "HAS_ROLE": {
+      "from": "Consultant",
+      "to": "Role",
+      "description": "Konsulten har denna roll"
+    },
+    "IN_ASSIGNMENT": {
+      "from": "Role",
+      "to": "Assignment",
+      "description": "Rollen är kopplad till detta uppdrag"
     }
   },
   "constraints": [
@@ -203,6 +218,11 @@
     },
     {
       "node": "Education",
+      "property": "name",
+      "type": "UNIQUE"
+    },
+    {
+      "node": "Role",
       "property": "name",
       "type": "UNIQUE"
     }
