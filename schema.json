@@ -99,14 +99,17 @@
     },
     "Education": {
       "attributes": {
-        "name": {
-          "type": "string",
-          "constraint": "UNIQUE",
-          "description": "Utbildningsnamn (t.ex. 'MSc Teknisk Fysik')"
-        },
         "institution": {
           "type": "string",
           "description": "Utbildningsinstitution (t.ex. 'Uppsala Universitet')"
+        },
+        "focus": {
+          "type": "string",
+          "description": "Utbildningens inriktning/namn (t.ex. 'MSc Teknisk Fysik')"
+        },
+        "period": {
+          "type": "string",
+          "description": "Tidsperiod för utbildningen (t.ex. '1998 - 2004')"
         }
       }
     },
@@ -116,9 +119,21 @@
           "type": "string",
           "description": "Namn på uppdraget"
         },
+        "client": {
+          "type": "string",
+          "description": "Kund/klient för uppdraget"
+        },
+        "role": {
+          "type": "string",
+          "description": "Rollen i uppdraget"
+        },
         "period": {
           "type": "string",
           "description": "Tidsperiod för uppdraget"
+        },
+        "description": {
+          "type": "string",
+          "description": "Beskrivning av uppdraget"
         }
       }
     },
@@ -132,6 +147,19 @@
         "description": {
           "type": "string",
           "description": "Beskrivning av rollen"
+        }
+      }
+    },
+    "Approach": {
+      "attributes": {
+        "name": {
+          "type": "string",
+          "constraint": "UNIQUE",
+          "description": "Namn på arbetssätt/metodik"
+        },
+        "description": {
+          "type": "string",
+          "description": "Beskrivning av arbetssättet"
         }
       }
     }
@@ -188,6 +216,11 @@
       "from": "Role",
       "to": "Assignment",
       "description": "Rollen är kopplad till detta uppdrag"
+    },
+    "USES_APPROACH": {
+      "from": "Assignment",
+      "to": "Approach",
+      "description": "Uppdraget använder detta arbetssätt"
     }
   },
   "constraints": [
@@ -223,6 +256,11 @@
     },
     {
       "node": "Role",
+      "property": "name",
+      "type": "UNIQUE"
+    },
+    {
+      "node": "Approach",
       "property": "name",
       "type": "UNIQUE"
     }

@@ -20,7 +20,14 @@ Detta projekt implementerar en Neo4j-grafdatabas för att hantera konsultprofile
    # eller
    .venv\Scripts\activate     # Windows
    ```
-3. Installera beroenden:
+3. Skapa en .env-fil i projektets rot:
+   ```bash
+   # Neo4j connection details
+   NEO4J_URI=bolt://localhost:7687
+   NEO4J_USER=neo4j
+   NEO4J_PASSWORD=password
+   ```
+4. Installera beroenden:
    ```bash
    pip install uv
    uv pip install -e .
@@ -74,11 +81,57 @@ CMD ["python", "import_profiles.py"]
    docker-compose down
    ```
 
-## Neo4j Browser
+## Använda Neo4j Browser
 
-Du kan komma åt Neo4j Browser på http://localhost:7474
-- Användarnamn: neo4j
-- Lösenord: password
+Efter att ha startat databasen med `make all` kan du använda Neo4j Browser för att utforska och analysera datan:
+
+1. Öppna Neo4j Browser genom att gå till http://localhost:7474 i din webbläsare
+2. Logga in med:
+   - Username: neo4j
+   - Password: (se .env-filen)
+
+### Användbara Cypher-queries
+
+Här är några exempel på queries du kan köra i Neo4j Browser:
+
+#### Se alla noder och deras relationer
+```cypher
+MATCH (n) RETURN n LIMIT 25;
+```
+
+#### Se antal noder per typ
+```cypher
+MATCH (n) 
+RETURN labels(n) as NodeType, count(*) as Count 
+ORDER BY Count DESC;
+```
+
+#### Se en specifik konsult och alla dess relationer
+```cypher
+MATCH (c:Consultant {name: "Mattias Larsen"})-[r]-(n) 
+RETURN c, r, n;
+```
+
+#### Se alla approaches och vilka assignments som använder dem
+```cypher
+MATCH (a:Assignment)-[r:USES_APPROACH]->(ap:Approach)
+RETURN a, r, ap;
+```
+
+#### Sök efter konsulter med specifik kompetens
+```cypher
+MATCH (c:Consultant)-[:KNOWS_TECHNOLOGY]->(t:Technology)
+WHERE t.name CONTAINS 'AI'
+RETURN c.name, collect(t.name) as Technologies;
+```
+
+#### Hitta konsulter med liknande arbetssätt
+```cypher
+MATCH (c1:Consultant)-[:PERFORMED]->(a1:Assignment)-[:USES_APPROACH]->(ap:Approach)<-[:USES_APPROACH]-(a2:Assignment)<-[:PERFORMED]-(c2:Consultant)
+WHERE c1 <> c2
+RETURN c1.name, c2.name, collect(DISTINCT ap.name) as CommonApproaches
+LIMIT 10;
+```
 
 ## Datamodell
 

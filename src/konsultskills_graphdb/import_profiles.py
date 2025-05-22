@@ -4,6 +4,7 @@ from typing import Dict, List, Any
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 from tqdm import tqdm
+import jsonschema
 
 # Load environment variables
 load_dotenv()
@@ -61,11 +62,18 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             MATCH (c:Consultant {name: $consultant_name})
             MERGE (c)-[r:KNOWS_TECHNOLOGY]->(t)
             """
-            session.run(tech_query, {
-                "name": tech["name"],
-                "category": tech["category"],
-                "consultant_name": data.get("name", "")
-            })
+            if isinstance(tech, str):
+                session.run(tech_query, {
+                    "name": tech,
+                    "category": "General",
+                    "consultant_name": data.get("name", "")
+                })
+            else:
+                session.run(tech_query, {
+                    "name": tech["name"],
+                    "category": tech["category"],
+                    "consultant_name": data.get("name", "")
+                })
 
         # Create and connect methods
         for method in data.get("methods", []):
@@ -75,11 +83,18 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             MATCH (c:Consultant {name: $consultant_name})
             MERGE (c)-[r:USES_METHOD]->(m)
             """
-            session.run(method_query, {
-                "name": method["name"],
-                "category": method["category"],
-                "consultant_name": data.get("name", "")
-            })
+            if isinstance(method, str):
+                session.run(method_query, {
+                    "name": method,
+                    "category": "General",
+                    "consultant_name": data.get("name", "")
+                })
+            else:
+                session.run(method_query, {
+                    "name": method["name"],
+                    "category": method["category"],
+                    "consultant_name": data.get("name", "")
+                })
 
         # Create and connect tools
         for tool in data.get("tools", []):
@@ -89,11 +104,18 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             MATCH (c:Consultant {name: $consultant_name})
             MERGE (c)-[r:USES_TOOL]->(t)
             """
-            session.run(tool_query, {
-                "name": tool["name"],
-                "category": tool["category"],
-                "consultant_name": data.get("name", "")
-            })
+            if isinstance(tool, str):
+                session.run(tool_query, {
+                    "name": tool,
+                    "category": "General",
+                    "consultant_name": data.get("name", "")
+                })
+            else:
+                session.run(tool_query, {
+                    "name": tool["name"],
+                    "category": tool["category"],
+                    "consultant_name": data.get("name", "")
+                })
 
         # Create and connect languages
         for lang in data.get("languages", []):
@@ -103,59 +125,77 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
             MATCH (c:Consultant {name: $consultant_name})
             MERGE (c)-[r:SPEAKS {proficiency: $proficiency}]->(l)
             """
-            session.run(lang_query, {
-                "name": lang["name"],
-                "proficiency": lang["proficiency"],
-                "consultant_name": data.get("name", "")
-            })
+            if isinstance(lang, str):
+                session.run(lang_query, {
+                    "name": lang,
+                    "proficiency": "Not specified",
+                    "consultant_name": data.get("name", "")
+                })
+            else:
+                session.run(lang_query, {
+                    "name": lang.get("language", lang.get("name", "")),
+                    "proficiency": lang.get("level", lang.get("proficiency", "Not specified")),
+                    "consultant_name": data.get("name", "")
+                })
 
         # Create and connect education
         for edu in data.get("education", []):
             edu_query = """
-            MERGE (e:Education {name: $name, institution: $institution})
+            MERGE (e:Education {name: $name, institution: $institution, period: $period})
             WITH e
             MATCH (c:Consultant {name: $consultant_name})
             MERGE (c)-[r:HAS_EDUCATION]->(e)
             """
             session.run(edu_query, {
-                "name": edu["name"],
-                "institution": edu["institution"],
+                "name": edu.get("focus", ""),
+                "institution": edu.get("institution", ""),
+                "period": edu.get("period", ""),
                 "consultant_name": data.get("name", "")
             })
 
         # Create and connect assignments with roles
         for assignment in data.get("assignments", []):
             assignment_query = """
-            MERGE (a:Assignment {name: $name, period: $period})
+            MERGE (a:Assignment {
+                client: $client,
+                role: $role,
+                period: $period,
+                description: $description
+            })
             WITH a
             MATCH (c:Consultant {name: $consultant_name})
             MERGE (c)-[r:PERFORMED]->(a)
             """
             session.run(assignment_query, {
-                "name": assignment["name"],
-                "period": assignment["period"],
+                "client": assignment.get("client", ""),
+                "role": assignment.get("role", ""),
+                "period": assignment.get("period", ""),
+                "description": assignment.get("description", ""),
                 "consultant_name": data.get("name", "")
             })
 
-            for role in assignment.get("roles", []):
-                role_query = """
-                MERGE (r:Role {name: $name, description: $description})
-                WITH r
-                MATCH (c:Consultant {name: $consultant_name})
-                MATCH (a:Assignment {name: $assignment_name})
-                MERGE (c)-[r1:HAS_ROLE]->(r)
-                MERGE (r)-[r2:IN_ASSIGNMENT]->(a)
+            # Create and connect approaches
+            for approach in assignment.get("approach", []):
+                approach_query = """
+                MERGE (ap:Approach {name: $name, description: $description})
+                WITH ap
+                MATCH (a:Assignment {client: $client, role: $role})
+                MERGE (a)-[r:USES_APPROACH]->(ap)
                 """
-                session.run(role_query, {
-                    "name": role["name"],
-                    "description": role["description"],
-                    "consultant_name": data.get("name", ""),
-                    "assignment_name": assignment["name"]
+                session.run(approach_query, {
+                    "name": approach.get("name", ""),
+                    "description": approach.get("description", ""),
+                    "client": assignment.get("client", ""),
+                    "role": assignment.get("role", "")
                 })
 
 def main():
     # Connect to Neo4j
     driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+    
+    # Load schema
+    with open("schema.json", "r", encoding="utf-8") as schema_file:
+        schema = json.load(schema_file)
     
     try:
         # Create constraints
@@ -167,6 +207,11 @@ def main():
         for json_file in tqdm(json_files, desc="Processing files"):
             with open(json_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
+                try:
+                    jsonschema.validate(instance=data, schema=schema)
+                except jsonschema.ValidationError as e:
+                    print(f"\n[REJECTED] {json_file}: {e.message}")
+                    continue
                 create_consultant(driver, data)
                 
     finally:
