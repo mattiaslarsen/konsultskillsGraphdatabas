@@ -192,39 +192,83 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
                     "role": assignment.get("role", "")
                 })
 
+def validate_all_files(directory_path: str) -> tuple[bool, list[tuple[str, str]]]:
+    """Validate all JSON files in a directory and its subdirectories.
+    Returns a tuple of (is_valid, list of (file_path, error_message))"""
+    validation_errors = []
+    
+    # Load schema
+    with open("schema.json", "r", encoding="utf-8") as schema_file:
+        schema = json.load(schema_file)
+
+    def validate_directory(dir_path: str) -> None:
+        # Process all JSON files in current directory
+        json_files = [f for f in os.listdir(dir_path) if f.endswith('.json')]
+        
+        for json_file in json_files:
+            file_path = os.path.join(dir_path, json_file)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    try:
+                        jsonschema.validate(instance=data, schema=schema)
+                        # Check for 'assignments' key (should be 'assignment')
+                        if "assignments" in data:
+                            validation_errors.append((file_path, "Uses 'assignments' key instead of 'assignment'"))
+                    except jsonschema.ValidationError as e:
+                        validation_errors.append((file_path, str(e)))
+            except Exception as e:
+                validation_errors.append((file_path, f"Failed to read/parse JSON: {str(e)}"))
+
+        # Process all subdirectories
+        for item in os.listdir(dir_path):
+            item_path = os.path.join(dir_path, item)
+            if os.path.isdir(item_path):
+                validate_directory(item_path)
+
+    validate_directory(directory_path)
+    return len(validation_errors) == 0, validation_errors
+
 def process_directory(driver: GraphDatabase.driver, directory_path: str) -> None:
     """Process all JSON files in a directory and its subdirectories."""
     if not os.path.exists(directory_path):
         print(f"Directory not found: {directory_path}")
         return
 
-    # Load schema
-    with open("schema.json", "r", encoding="utf-8") as schema_file:
-        schema = json.load(schema_file)
-
-    # Process all JSON files in current directory
-    json_files = [f for f in os.listdir(directory_path) if f.endswith('.json')]
+    # First validate all files
+    is_valid, validation_errors = validate_all_files(directory_path)
     
-    for json_file in tqdm(json_files, desc=f"Processing files in {os.path.basename(directory_path)}"):
-        file_path = os.path.join(directory_path, json_file)
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                try:
-                    jsonschema.validate(instance=data, schema=schema)
+    if not is_valid:
+        print("\n[VALIDATION ERRORS] The following files have issues:")
+        for file_path, error in validation_errors:
+            print(f"\n  {os.path.basename(file_path)}:")
+            print(f"    {error}")
+        print("\nPlease fix these issues before importing.")
+        return
+
+    # If all files are valid, proceed with import
+    def process_directory_recursive(dir_path: str) -> None:
+        # Process all JSON files in current directory
+        json_files = [f for f in os.listdir(dir_path) if f.endswith('.json')]
+        
+        for json_file in tqdm(json_files, desc=f"Processing files in {os.path.basename(dir_path)}"):
+            file_path = os.path.join(dir_path, json_file)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
                     create_consultant(driver, data)
                     print(f"\n[SUCCESS] Processed {json_file}")
-                except jsonschema.ValidationError as e:
-                    print(f"\n[REJECTED] {json_file}: {e.message}")
-        except Exception as e:
-            print(f"\n[ERROR] Failed to process {json_file}: {str(e)}")
+            except Exception as e:
+                print(f"\n[ERROR] Failed to process {json_file}: {str(e)}")
 
-    # Process all subdirectories
-    for item in os.listdir(directory_path):
-        item_path = os.path.join(directory_path, item)
-        if os.path.isdir(item_path):
-            print(f"\nProcessing subdirectory: {item}")
-            process_directory(driver, item_path)
+        # Process all subdirectories
+        for item in os.listdir(dir_path):
+            item_path = os.path.join(dir_path, item)
+            if os.path.isdir(item_path):
+                print(f"\nProcessing subdirectory: {item}")
+                process_directory_recursive(item_path)
+
+    process_directory_recursive(directory_path)
 
 def main():
     # Connect to Neo4j
