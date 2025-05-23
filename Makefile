@@ -1,3 +1,6 @@
+# Set UV_LINK_MODE to copy to avoid hardlink issues on Windows
+export UV_LINK_MODE=copy
+
 .PHONY: setup start import clean deepclean wait_neo4j all check
 
 # Default import path, can be overridden: make import IMPORT_PATH=/din/vag
