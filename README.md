@@ -183,3 +183,10 @@ MATCH (c:Consultant)-[:KNOWS_TECHNOLOGY]->(t1:Technology {name: 'Python'})
 MATCH (c)-[:KNOWS_TECHNOLOGY]->(t2:Technology {name: 'React'})
 RETURN c.name, c.role
 ```
+
+print(f"[IMPORT] {data.get('name')}: {len(data.get('assignments', []))} assignments, "
+      f"{len(data.get('technologies', []))} technologies, "
+      f"{len(data.get('methods', []))} methods, "
+      f"{len(data.get('tools', []))} tools, "
+      f"{len(data.get('languages', []))} languages, "
+      f"{len(data.get('education', []))} education")

@@ -153,8 +153,11 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
                 "consultant_name": data.get("name", "")
             })
 
-        # Create and connect assignments with roles
-        for assignment in data.get("assignments", []):
+        # Only use 'assignment' key for assignments, warn if 'assignments' is present
+        if "assignments" in data:
+            print(f"[WARNING] 'assignments' key found in {data.get('name', 'unknown')}, but only 'assignment' is supported. Please update the JSON.")
+        assignments = data.get("assignment", [])
+        for assignment in assignments:
             assignment_query = """
             MERGE (a:Assignment {
                 client: $client,
@@ -183,8 +186,8 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
                 MERGE (a)-[r:USES_APPROACH]->(ap)
                 """
                 session.run(approach_query, {
-                    "name": approach.get("name", ""),
-                    "description": approach.get("description", ""),
+                    "name": approach.get("name", "") if isinstance(approach, dict) else approach,
+                    "description": approach.get("description", "") if isinstance(approach, dict) else "",
                     "client": assignment.get("client", ""),
                     "role": assignment.get("role", "")
                 })
