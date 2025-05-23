@@ -189,30 +189,51 @@ def create_consultant(driver: GraphDatabase.driver, data: Dict[str, Any]) -> Non
                     "role": assignment.get("role", "")
                 })
 
-def main():
-    # Connect to Neo4j
-    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
-    
+def process_directory(driver: GraphDatabase.driver, directory_path: str) -> None:
+    """Process all JSON files in a directory and its subdirectories."""
+    if not os.path.exists(directory_path):
+        print(f"Directory not found: {directory_path}")
+        return
+
     # Load schema
     with open("schema.json", "r", encoding="utf-8") as schema_file:
         schema = json.load(schema_file)
+
+    # Process all JSON files in current directory
+    json_files = [f for f in os.listdir(directory_path) if f.endswith('.json')]
+    
+    for json_file in tqdm(json_files, desc=f"Processing files in {os.path.basename(directory_path)}"):
+        file_path = os.path.join(directory_path, json_file)
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                try:
+                    jsonschema.validate(instance=data, schema=schema)
+                    create_consultant(driver, data)
+                    print(f"\n[SUCCESS] Processed {json_file}")
+                except jsonschema.ValidationError as e:
+                    print(f"\n[REJECTED] {json_file}: {e.message}")
+        except Exception as e:
+            print(f"\n[ERROR] Failed to process {json_file}: {str(e)}")
+
+    # Process all subdirectories
+    for item in os.listdir(directory_path):
+        item_path = os.path.join(directory_path, item)
+        if os.path.isdir(item_path):
+            print(f"\nProcessing subdirectory: {item}")
+            process_directory(driver, item_path)
+
+def main():
+    # Connect to Neo4j
+    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
     
     try:
         # Create constraints
         create_constraints(driver)
         
-        # Load and process JSON files
-        json_files = [f for f in os.listdir() if f.endswith('.json') and f != 'schema.json']
-        
-        for json_file in tqdm(json_files, desc="Processing files"):
-            with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                try:
-                    jsonschema.validate(instance=data, schema=schema)
-                except jsonschema.ValidationError as e:
-                    print(f"\n[REJECTED] {json_file}: {e.message}")
-                    continue
-                create_consultant(driver, data)
+        # Process OneDrive directory
+        onedrive_path = r"C:\Users\matti\GNR8 AB\GNR8 AB - Konsultprofiler"
+        process_directory(driver, onedrive_path)
                 
     finally:
         driver.close()
